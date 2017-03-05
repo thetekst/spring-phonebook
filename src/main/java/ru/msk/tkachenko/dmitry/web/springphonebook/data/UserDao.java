@@ -7,9 +7,7 @@ import java.util.List;
 
 public interface UserDao {
 
-    long totalCount();
-
-    User save(User user);
+    Long save(User user);
 
     int update(User user);
 

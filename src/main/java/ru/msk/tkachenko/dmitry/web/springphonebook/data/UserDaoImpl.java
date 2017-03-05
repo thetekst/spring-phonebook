@@ -1,19 +1,26 @@
 package ru.msk.tkachenko.dmitry.web.springphonebook.data;
 
-import java.sql.ResultSet;
-import java.sql.SQLException;
+import java.sql.*;
 import java.util.List;
+
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.dao.EmptyResultDataAccessException;
 import org.springframework.jdbc.core.JdbcTemplate;
+import org.springframework.jdbc.core.PreparedStatementCreator;
 import org.springframework.jdbc.core.RowMapper;
+import org.springframework.jdbc.support.GeneratedKeyHolder;
 import org.springframework.stereotype.Repository;
 import org.springframework.web.bind.annotation.PathVariable;
+import ru.msk.tkachenko.dmitry.web.springphonebook.controller.UserRestController;
 import ru.msk.tkachenko.dmitry.web.springphonebook.error.UserNotFoundException;
 import ru.msk.tkachenko.dmitry.web.springphonebook.model.User;
 
 @Repository
 public class UserDaoImpl implements UserDao {
+    private static final Logger logger = LoggerFactory.getLogger(UserDaoImpl.class);
+
     @Autowired
     private JdbcTemplate jdbcTemplate;
 
@@ -24,21 +31,22 @@ public class UserDaoImpl implements UserDao {
     private final String saveQuery = "INSERT INTO profile (username, phone) values (?, ?)";
 
     @Override
-    public long totalCount() {
-        final String sql = "SELECT count(*) FROM profile";
-        long count = jdbcTemplate.queryForObject(sql, Long.class);
+    public Long save(User user) {
+        GeneratedKeyHolder holder = new GeneratedKeyHolder();
 
-        return count;
-    }
+        jdbcTemplate.update(con -> {
+            PreparedStatement statement = con.prepareStatement(saveQuery, Statement.RETURN_GENERATED_KEYS);
+            statement.setString(1, user.getUsername());
+            statement.setString(2, user.getPhone());
+            return statement;
+        }, holder);
 
-    @Override
-    public User save(User user) {
-        jdbcTemplate.update(
-                saveQuery,
-                user.getPhone(),
-                user.getUsername());
+//        jdbcTemplate.update(
+//                saveQuery,
+//                user.getUsername(),
+//                user.getPhone());
 
-        return user;
+        return holder.getKey().longValue();
     }
 
     @Override
